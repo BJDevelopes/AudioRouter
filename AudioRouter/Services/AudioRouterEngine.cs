@@ -101,8 +101,20 @@ namespace AudioRouter.Services
                     Volume = _route.Volume
                 };
 
+                // Convert mono to stereo if needed
+                ISampleProvider outputProvider = _volumeProvider;
+                if (_capture.WaveFormat.Channels == 1 && outputDevice.AudioClient.MixFormat.Channels == 2)
+                {
+                    Debug.WriteLine("Converting MONO to STEREO for compatibility");
+                    outputProvider = new MonoToStereoSampleProvider(_volumeProvider);
+                }
+                else
+                {
+                    Debug.WriteLine($"No channel conversion needed: Capture={_capture.WaveFormat.Channels}ch, Output={outputDevice.AudioClient.MixFormat.Channels}ch");
+                }
+
                 // Add diagnostic wrapper to see if output is reading from provider
-                var diagnosticProvider = new DiagnosticSampleProvider(_volumeProvider);
+                var diagnosticProvider = new DiagnosticSampleProvider(outputProvider);
 
                 // Initialize output to target device with configured latency
                 // Use Shared mode with thread-based playback for better reliability
