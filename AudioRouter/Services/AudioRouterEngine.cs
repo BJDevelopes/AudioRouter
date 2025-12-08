@@ -48,20 +48,34 @@ namespace AudioRouter.Services
                 _cancellationTokenSource = new CancellationTokenSource();
 
                 // Get the source audio device to capture from
+                Debug.WriteLine($"Attempting to get device by ID: {_route.SourceDevice.Id}");
+                Debug.WriteLine($"Device name: {_route.SourceDevice.FriendlyName}");
+
                 var captureDevice = _deviceEnumerator.GetDeviceById(_route.SourceDevice.Id);
                 if (captureDevice == null)
                 {
                     OnError?.Invoke(this, "Source input device not found");
+                    Debug.WriteLine("ERROR: captureDevice is null!");
                     return;
                 }
 
+                Debug.WriteLine($"Capture device found: {captureDevice.FriendlyName}");
+                Debug.WriteLine($"Capture device state: {captureDevice.State}");
+
                 // Get the target output device
+                Debug.WriteLine($"Attempting to get output device by ID: {_route.TargetDevice.Id}");
+                Debug.WriteLine($"Output device name: {_route.TargetDevice.FriendlyName}");
+
                 var outputDevice = _deviceEnumerator.GetDeviceById(_route.TargetDevice.Id);
                 if (outputDevice == null)
                 {
                     OnError?.Invoke(this, "Target output device not found");
+                    Debug.WriteLine("ERROR: outputDevice is null!");
                     return;
                 }
+
+                Debug.WriteLine($"Output device found: {outputDevice.FriendlyName}");
+                Debug.WriteLine($"Output device state: {outputDevice.State}");
 
                 // Initialize loopback capture
                 _capture = new WasapiLoopbackCapture(captureDevice);
@@ -103,13 +117,18 @@ namespace AudioRouter.Services
                 }
 
                 // Start capture and playback
+                Debug.WriteLine("Starting capture...");
                 _capture.StartRecording();
+
+                Debug.WriteLine("Starting playback...");
                 _output.Play();
 
                 _isRunning = true;
                 _route.IsActive = true;
 
-                Debug.WriteLine($"Started routing: {_route}");
+                Debug.WriteLine($"✓ Route successfully started: {_route}");
+                Debug.WriteLine($"  Capture format: {_capture.WaveFormat}");
+                Debug.WriteLine($"  Buffer: {_route.LatencyConfig.BufferMilliseconds}ms, WASAPI: {_route.LatencyConfig.WasapiLatencyMilliseconds}ms");
             }
             catch (Exception ex)
             {
@@ -124,6 +143,7 @@ namespace AudioRouter.Services
             if (_waveProvider != null && e.BytesRecorded > 0)
             {
                 _waveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+                Debug.WriteLine($"Captured {e.BytesRecorded} bytes of audio data");
             }
         }
 
