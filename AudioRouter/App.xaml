@@ -7,14 +7,14 @@
         <converters:VolumeConverter x:Key="VolumeConverter"/>
         <converters:LatencyModeConverter x:Key="LatencyModeConverter"/>
 
-        <!-- Dark Theme Colors -->
-        <SolidColorBrush x:Key="DarkBackground" Color="#1E1E1E"/>
-        <SolidColorBrush x:Key="DarkPanel" Color="#252526"/>
-        <SolidColorBrush x:Key="DarkBorder" Color="#3E3E42"/>
-        <SolidColorBrush x:Key="DarkAccent" Color="#007ACC"/>
-        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#CCCCCC"/>
-        <SolidColorBrush x:Key="TextMuted" Color="#858585"/>
+        <!-- Dark Theme Colors - True Black Theme -->
+        <SolidColorBrush x:Key="DarkBackground" Color="#000000"/>
+        <SolidColorBrush x:Key="DarkPanel" Color="#0A0A0A"/>
+        <SolidColorBrush x:Key="DarkBorder" Color="#1E1E1E"/>
+        <SolidColorBrush x:Key="DarkAccent" Color="#0078D4"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#E0E0E0"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#B0B0B0"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#707070"/>
 
         <!-- Window Style -->
         <Style TargetType="Window">
@@ -23,7 +23,7 @@
 
         <!-- Button Style -->
         <Style TargetType="Button">
-            <Setter Property="Background" Value="#3A3A3C"/>
+            <Setter Property="Background" Value="#1A1A1A"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="12,8"/>
@@ -42,14 +42,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#4A4A4C"/>
+                                <Setter Property="Background" Value="#2A2A2A"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#2A2A2C"/>
+                                <Setter Property="Background" Value="#0A0A0A"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="#2A2A2C"/>
-                                <Setter Property="Foreground" Value="#666666"/>
+                                <Setter Property="Background" Value="#0A0A0A"/>
+                                <Setter Property="Foreground" Value="#404040"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -59,7 +59,7 @@
 
         <!-- ComboBox Style -->
         <Style TargetType="ComboBox">
-            <Setter Property="Background" Value="#3A3A3C"/>
+            <Setter Property="Background" Value="#1A1A1A"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderBrush" Value="{StaticResource DarkBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -69,7 +69,7 @@
 
         <!-- ListBox Style -->
         <Style TargetType="ListBox">
-            <Setter Property="Background" Value="#2D2D30"/>
+            <Setter Property="Background" Value="#0A0A0A"/>
             <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="BorderBrush" Value="{StaticResource DarkBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -99,7 +99,7 @@
                     <Setter Property="Foreground" Value="White"/>
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#3A3A3C"/>
+                    <Setter Property="Background" Value="#1A1A1A"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
