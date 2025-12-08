@@ -38,8 +38,9 @@ namespace AudioRouter.Services
                             var session = sessionManager.Sessions[i];
                             var processId = (int)session.GetProcessID;
 
-                            // Skip system sounds and already seen processes
-                            if (processId == 0 || seenProcessIds.Contains(processId))
+                            // Skip system sounds, already seen processes, and AudioRouter itself
+                            var currentProcessId = Process.GetCurrentProcess().Id;
+                            if (processId == 0 || processId == currentProcessId || seenProcessIds.Contains(processId))
                                 continue;
 
                             try
