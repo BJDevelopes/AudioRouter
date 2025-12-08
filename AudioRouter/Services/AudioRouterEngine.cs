@@ -105,8 +105,8 @@ namespace AudioRouter.Services
                 var diagnosticProvider = new DiagnosticSampleProvider(_volumeProvider);
 
                 // Initialize output to target device with configured latency
-                // Use Shared mode with event callback for better compatibility
-                _output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, true, _route.LatencyConfig.WasapiLatencyMilliseconds);
+                // Use Shared mode with thread-based playback for better reliability
+                _output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, false, _route.LatencyConfig.WasapiLatencyMilliseconds);
 
                 Debug.WriteLine($"Initializing WasapiOut with output device: {outputDevice.FriendlyName}");
                 Debug.WriteLine($"Output device format: {outputDevice.AudioClient.MixFormat}");
@@ -133,9 +133,15 @@ namespace AudioRouter.Services
                     Debug.WriteLine($"Could not set thread priority: {ex.Message}");
                 }
 
-                // Start capture and playback
+                // Start capture first to begin filling the buffer
                 Debug.WriteLine("Starting capture...");
                 _capture.StartRecording();
+
+                // Pre-buffer: wait a bit for buffer to fill before starting playback
+                Debug.WriteLine("Pre-buffering audio...");
+                await Task.Delay(200); // Wait 200ms for buffer to fill
+
+                Debug.WriteLine($"Buffer status before playback: {_waveProvider.BufferedBytes} bytes ({_waveProvider.BufferedDuration.TotalMilliseconds:F1}ms)");
 
                 Debug.WriteLine("Starting playback...");
                 _output.Play();
