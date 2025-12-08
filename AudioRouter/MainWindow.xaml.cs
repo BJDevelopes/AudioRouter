@@ -17,11 +17,13 @@ namespace AudioRouter
         private readonly DispatcherTimer _refreshTimer;
 
         private ObservableCollection<AudioSession> _audioSessions;
+        private ObservableCollection<AudioDeviceInfo> _inputDevices;
         private ObservableCollection<AudioDeviceInfo> _outputDevices;
         private ObservableCollection<AudioRoute> _activeRoutes;
 
         private AudioSession? _selectedSession;
-        private AudioDeviceInfo? _selectedDevice;
+        private AudioDeviceInfo? _selectedInputDevice;
+        private AudioDeviceInfo? _selectedOutputDevice;
 
         public MainWindow()
         {
@@ -32,10 +34,12 @@ namespace AudioRouter
             _routingManager = new RoutingManager();
 
             _audioSessions = new ObservableCollection<AudioSession>();
+            _inputDevices = new ObservableCollection<AudioDeviceInfo>();
             _outputDevices = new ObservableCollection<AudioDeviceInfo>();
             _activeRoutes = new ObservableCollection<AudioRoute>();
 
             AudioSessionsListBox.ItemsSource = _audioSessions;
+            InputDevicesComboBox.ItemsSource = _inputDevices;
             OutputDevicesComboBox.ItemsSource = _outputDevices;
             ActiveRoutesListBox.ItemsSource = _activeRoutes;
 
@@ -86,8 +90,9 @@ namespace AudioRouter
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             RefreshAudioSessions();
+            RefreshInputDevices();
             RefreshOutputDevices();
-            UpdateStatus("Ready - Select an application and output device to create a route");
+            UpdateStatus("Ready - Select an application, input device, and output device to create a route");
         }
 
         private void RefreshAudioSessions()
@@ -105,6 +110,29 @@ namespace AudioRouter
             catch (Exception ex)
             {
                 UpdateStatus($"Error refreshing sessions: {ex.Message}");
+            }
+        }
+
+        private void RefreshInputDevices()
+        {
+            try
+            {
+                var devices = _deviceEnumerator.GetInputDevices();
+
+                _inputDevices.Clear();
+                foreach (var device in devices)
+                {
+                    _inputDevices.Add(device);
+                }
+
+                if (_inputDevices.Count > 0 && InputDevicesComboBox.SelectedItem == null)
+                {
+                    InputDevicesComboBox.SelectedIndex = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus($"Error refreshing input devices: {ex.Message}");
             }
         }
 
@@ -127,7 +155,7 @@ namespace AudioRouter
             }
             catch (Exception ex)
             {
-                UpdateStatus($"Error refreshing devices: {ex.Message}");
+                UpdateStatus($"Error refreshing output devices: {ex.Message}");
             }
         }
 
@@ -137,22 +165,30 @@ namespace AudioRouter
             UpdateStartButtonState();
         }
 
+        private void InputDevicesComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            _selectedInputDevice = InputDevicesComboBox.SelectedItem as AudioDeviceInfo;
+            UpdateStartButtonState();
+        }
+
         private void OutputDevicesComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            _selectedDevice = OutputDevicesComboBox.SelectedItem as AudioDeviceInfo;
+            _selectedOutputDevice = OutputDevicesComboBox.SelectedItem as AudioDeviceInfo;
             UpdateStartButtonState();
         }
 
         private void UpdateStartButtonState()
         {
-            StartRouteButton.IsEnabled = _selectedSession != null && _selectedDevice != null;
+            StartRouteButton.IsEnabled = _selectedSession != null &&
+                                        _selectedInputDevice != null &&
+                                        _selectedOutputDevice != null;
         }
 
         private async void StartRoute_Click(object sender, RoutedEventArgs e)
         {
-            if (_selectedSession == null || _selectedDevice == null)
+            if (_selectedSession == null || _selectedInputDevice == null || _selectedOutputDevice == null)
             {
-                MessageBox.Show("Please select both an application and an output device.",
+                MessageBox.Show("Please select an application, input device, and output device.",
                     "Selection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -160,7 +196,8 @@ namespace AudioRouter
             // Check if route already exists
             var existingRoute = _activeRoutes.FirstOrDefault(r =>
                 r.SourceSession.ProcessId == _selectedSession.ProcessId &&
-                r.TargetDevice.Id == _selectedDevice.Id);
+                r.SourceDevice.Id == _selectedInputDevice.Id &&
+                r.TargetDevice.Id == _selectedOutputDevice.Id);
 
             if (existingRoute != null)
             {
@@ -172,7 +209,8 @@ namespace AudioRouter
             var route = new AudioRoute
             {
                 SourceSession = _selectedSession,
-                TargetDevice = _selectedDevice
+                SourceDevice = _selectedInputDevice,
+                TargetDevice = _selectedOutputDevice
             };
 
             UpdateStatus($"Starting route: {route}...");
@@ -232,8 +270,9 @@ namespace AudioRouter
 
         private void RefreshDevices_Click(object sender, RoutedEventArgs e)
         {
+            RefreshInputDevices();
             RefreshOutputDevices();
-            UpdateStatus("Refreshed output devices");
+            UpdateStatus("Refreshed input and output devices");
         }
 
         private void UpdateStatus(string message)

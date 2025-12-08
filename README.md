@@ -9,22 +9,22 @@ A Windows desktop application that allows you to route and duplicate audio from 
 ## Features
 
 - **Zero Configuration**: Works without modifying Windows audio settings or application settings
-- **Application-Level Routing**: Select any running application and route its audio to any output device
+- **Flexible Audio Routing**: Select any input device to capture from and route to any output device
+- **Application-Level Context**: Track which application's audio you're routing
 - **Multiple Routes**: Create multiple audio routes simultaneously
 - **Volume Control**: Adjust volume independently for each route
 - **Real-Time Management**: Routes are temporary and cleared when the application closes
-- **Auto-Discovery**: Automatically detects running applications with active audio sessions
+- **Auto-Discovery**: Automatically detects running applications with active audio sessions and available devices
 - **Modern UI**: Clean, intuitive interface similar to Windows Volume Mixer
 
 ## How It Works
 
 Audio Router uses **WASAPI (Windows Audio Session API) Loopback Capture** to:
-1. Capture audio output from the system's default audio device
+1. Capture audio output from your selected input device (any playback device on your system)
 2. Buffer and process the audio stream
-3. Forward it to your selected output device
-4. Maintain independent volume control per route
-
-**Important**: The application captures from the system's default playback device, so audio must be playing through your default device for routing to work.
+3. Apply independent volume control
+4. Forward it to your selected output device
+5. Maintain all routes in real-time without modifying system settings
 
 ## Requirements
 
@@ -72,20 +72,25 @@ The executable will be in `AudioRouter/bin/Release/net8.0-windows/win-x64/publis
 
 2. **Select Source Application**:
    - The left panel shows all applications currently playing audio
-   - Click on the application you want to route
+   - Click on the application you want to route (this helps you track what you're routing)
    - Use "Refresh Applications" if your app isn't listed
 
-3. **Select Output Device**:
-   - Choose the target output device from the dropdown
-   - This is where the audio will be duplicated to
+3. **Select Input Device (Capture From)**:
+   - Choose which audio device to capture from
+   - This is typically the device that's playing the audio you want to route
+   - Defaults to your system's default playback device
 
-4. **Start Route**:
+4. **Select Output Device (Route To)**:
+   - Choose the target output device from the dropdown
+   - This is where the audio will be duplicated/forwarded to
+
+5. **Start Route**:
    - Click "▶️ Start Audio Route"
    - The route appears in the "Active Routes" panel on the right
 
-5. **Adjust Volume** (Optional):
+6. **Adjust Volume** (Optional):
    - Use the slider next to each active route to control its volume
-   - Volume is independent from system volume
+   - Volume is independent from system volume and application volume
 
 ### Managing Routes
 
@@ -136,11 +141,11 @@ AudioRouter/
 
 ## Limitations
 
-- Only captures audio from the **default playback device**
+- Captures all audio from the selected input device (not per-application isolation)
 - Cannot route audio from applications using exclusive mode
-- Requires applications to be actively playing audio
+- Requires audio to be actively playing through the selected input device
 - Small latency (~50ms) may be noticeable in some scenarios
-- Does not support per-application capture (captures all system audio on default device)
+- The application selection helps you track routes but doesn't filter audio by process
 
 ## Troubleshooting
 

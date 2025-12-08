@@ -46,9 +46,13 @@ namespace AudioRouter.Services
             {
                 _cancellationTokenSource = new CancellationTokenSource();
 
-                // Get the default audio device to capture from
-                var deviceEnumerator = new MMDeviceEnumerator();
-                var captureDevice = deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                // Get the source audio device to capture from
+                var captureDevice = _deviceEnumerator.GetDeviceById(_route.SourceDevice.Id);
+                if (captureDevice == null)
+                {
+                    OnError?.Invoke(this, "Source input device not found");
+                    return;
+                }
 
                 // Get the target output device
                 var outputDevice = _deviceEnumerator.GetDeviceById(_route.TargetDevice.Id);

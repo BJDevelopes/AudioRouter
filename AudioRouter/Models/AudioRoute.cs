@@ -8,6 +8,7 @@ namespace AudioRouter.Models
 
         public Guid Id { get; set; } = Guid.NewGuid();
         public AudioSession SourceSession { get; set; } = null!;
+        public AudioDeviceInfo SourceDevice { get; set; } = null!;
         public AudioDeviceInfo TargetDevice { get; set; } = null!;
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -26,7 +27,7 @@ namespace AudioRouter.Models
 
         public override string ToString()
         {
-            return $"{SourceSession.DisplayName} → {TargetDevice.FriendlyName}";
+            return $"{SourceSession.DisplayName} ({SourceDevice.FriendlyName}) → {TargetDevice.FriendlyName}";
         }
     }
 }

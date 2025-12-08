@@ -15,6 +15,33 @@ namespace AudioRouter.Services
             _deviceEnumerator = new MMDeviceEnumerator();
         }
 
+        public List<AudioDeviceInfo> GetInputDevices()
+        {
+            var devices = new List<AudioDeviceInfo>();
+
+            try
+            {
+                var defaultDevice = _deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                var deviceCollection = _deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+
+                foreach (var device in deviceCollection)
+                {
+                    devices.Add(new AudioDeviceInfo
+                    {
+                        Id = device.ID,
+                        FriendlyName = device.FriendlyName,
+                        IsDefault = device.ID == defaultDevice.ID
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error enumerating input devices: {ex.Message}");
+            }
+
+            return devices.OrderByDescending(d => d.IsDefault).ThenBy(d => d.FriendlyName).ToList();
+        }
+
         public List<AudioDeviceInfo> GetOutputDevices()
         {
             var devices = new List<AudioDeviceInfo>();
@@ -36,7 +63,7 @@ namespace AudioRouter.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error enumerating devices: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error enumerating output devices: {ex.Message}");
             }
 
             return devices.OrderByDescending(d => d.IsDefault).ThenBy(d => d.FriendlyName).ToList();

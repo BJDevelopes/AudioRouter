@@ -36,6 +36,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -47,15 +48,26 @@
                     <!-- Audio Sessions -->
                     <StackPanel Grid.Row="1" Margin="0,0,0,10">
                         <TextBlock Text="Select Application:" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                        <ListBox x:Name="AudioSessionsListBox" Height="150"
+                        <ListBox x:Name="AudioSessionsListBox" Height="100"
                                 SelectionChanged="AudioSessionsListBox_SelectionChanged"/>
                         <Button Content="🔄 Refresh Applications" Click="RefreshSessions_Click"
                                HorizontalAlignment="Stretch" Margin="0,5,0,0"/>
                     </StackPanel>
 
-                    <!-- Output Devices -->
+                    <!-- Input Devices -->
                     <StackPanel Grid.Row="2" Margin="0,0,0,10">
-                        <TextBlock Text="Select Output Device:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                        <TextBlock FontWeight="SemiBold" Margin="0,0,0,5">
+                            <Run Text="Capture From (Input):"/>
+                        </TextBlock>
+                        <ComboBox x:Name="InputDevicesComboBox"
+                                 SelectionChanged="InputDevicesComboBox_SelectionChanged"/>
+                    </StackPanel>
+
+                    <!-- Output Devices -->
+                    <StackPanel Grid.Row="3" Margin="0,0,0,10">
+                        <TextBlock FontWeight="SemiBold" Margin="0,0,0,5">
+                            <Run Text="Route To (Output):"/>
+                        </TextBlock>
                         <ComboBox x:Name="OutputDevicesComboBox"
                                  SelectionChanged="OutputDevicesComboBox_SelectionChanged"/>
                         <Button Content="🔄 Refresh Devices" Click="RefreshDevices_Click"
@@ -63,10 +75,10 @@
                     </StackPanel>
 
                     <!-- Spacer -->
-                    <Border Grid.Row="3"/>
+                    <Border Grid.Row="4"/>
 
                     <!-- Create Route Button -->
-                    <Button Grid.Row="4" Content="▶️ Start Audio Route"
+                    <Button Grid.Row="5" Content="▶️ Start Audio Route"
                            x:Name="StartRouteButton" Click="StartRoute_Click"
                            Height="40" FontSize="14" FontWeight="Bold"
                            Background="#27AE60" Foreground="White"
@@ -108,7 +120,11 @@
                                             <TextBlock Text="{Binding SourceSession.DisplayName}"
                                                       FontWeight="SemiBold"/>
                                             <TextBlock Foreground="#7F8C8D" FontSize="11">
-                                                <Run Text="→ "/>
+                                                <Run Text="From: "/>
+                                                <Run Text="{Binding SourceDevice.FriendlyName}"/>
+                                            </TextBlock>
+                                            <TextBlock Foreground="#7F8C8D" FontSize="11">
+                                                <Run Text="To: "/>
                                                 <Run Text="{Binding TargetDevice.FriendlyName}"/>
                                             </TextBlock>
                                         </StackPanel>
