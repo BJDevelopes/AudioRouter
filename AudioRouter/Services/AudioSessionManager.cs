@@ -20,41 +20,63 @@ namespace AudioRouter.Services
         public List<AudioSession> GetActiveAudioSessions()
         {
             var sessions = new List<AudioSession>();
+            var seenProcessIds = new HashSet<int>();
 
             try
             {
-                var defaultDevice = _deviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-                var sessionManager = defaultDevice.AudioSessionManager;
+                // Enumerate ALL active audio devices to find all applications
+                var devices = _deviceEnumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
 
-                for (int i = 0; i < sessionManager.Sessions.Count; i++)
+                foreach (var device in devices)
                 {
-                    var session = sessionManager.Sessions[i];
-                    var processId = (int)session.GetProcessID;
-
-                    if (processId == 0) continue;
-
                     try
                     {
-                        var process = Process.GetProcessById(processId);
-                        var displayName = session.DisplayName;
+                        var sessionManager = device.AudioSessionManager;
 
-                        if (string.IsNullOrWhiteSpace(displayName))
+                        for (int i = 0; i < sessionManager.Sessions.Count; i++)
                         {
-                            displayName = process.ProcessName;
+                            var session = sessionManager.Sessions[i];
+                            var processId = (int)session.GetProcessID;
+
+                            // Skip system sounds and already seen processes
+                            if (processId == 0 || seenProcessIds.Contains(processId))
+                                continue;
+
+                            try
+                            {
+                                var process = Process.GetProcessById(processId);
+                                var displayName = session.DisplayName;
+
+                                if (string.IsNullOrWhiteSpace(displayName))
+                                {
+                                    displayName = process.ProcessName;
+                                }
+
+                                // Check if process still exists and has a window
+                                if (!process.HasExited)
+                                {
+                                    sessions.Add(new AudioSession
+                                    {
+                                        ProcessId = processId,
+                                        ProcessName = process.ProcessName,
+                                        DisplayName = displayName,
+                                        Volume = session.SimpleAudioVolume.Volume,
+                                        IsMuted = session.SimpleAudioVolume.Mute
+                                    });
+
+                                    seenProcessIds.Add(processId);
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                // Process may have exited or access denied
+                                continue;
+                            }
                         }
-
-                        sessions.Add(new AudioSession
-                        {
-                            ProcessId = processId,
-                            ProcessName = process.ProcessName,
-                            DisplayName = displayName,
-                            Volume = session.SimpleAudioVolume.Volume,
-                            IsMuted = session.SimpleAudioVolume.Mute
-                        });
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // Process may have exited or access denied
+                        Debug.WriteLine($"Error getting sessions from device {device.FriendlyName}: {ex.Message}");
                         continue;
                     }
                 }
