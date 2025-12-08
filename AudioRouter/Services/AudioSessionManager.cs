@@ -61,7 +61,9 @@ namespace AudioRouter.Services
                                         ProcessName = process.ProcessName,
                                         DisplayName = displayName,
                                         Volume = session.SimpleAudioVolume.Volume,
-                                        IsMuted = session.SimpleAudioVolume.Mute
+                                        IsMuted = session.SimpleAudioVolume.Mute,
+                                        DeviceId = device.ID,
+                                        DeviceName = device.FriendlyName
                                     });
 
                                     seenProcessIds.Add(processId);
