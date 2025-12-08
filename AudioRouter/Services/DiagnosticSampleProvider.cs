@@ -20,22 +20,20 @@ namespace AudioRouter.Services
         {
             var samplesRead = _source.Read(buffer, offset, count);
 
-            // Log every 50th read to avoid spam
-            if (_readCount++ % 50 == 0)
+            // Diagnostic logging disabled for production (enable for debugging)
+            // Uncomment below to monitor audio levels
+            /*
+            if (_readCount++ % 100 == 0)
             {
-                // Check if we're getting actual audio or silence
                 float maxValue = 0f;
-                float sumSquares = 0f;
                 for (int i = offset; i < offset + samplesRead; i++)
                 {
                     float absValue = Math.Abs(buffer[i]);
                     if (absValue > maxValue) maxValue = absValue;
-                    sumSquares += buffer[i] * buffer[i];
                 }
-                float rms = samplesRead > 0 ? (float)Math.Sqrt(sumSquares / samplesRead) : 0f;
-
-                Debug.WriteLine($"[DiagnosticSampleProvider] Read {samplesRead} samples | Peak: {maxValue:F4} | RMS: {rms:F4}");
+                Debug.WriteLine($"[Audio] Peak level: {maxValue:F4}");
             }
+            */
 
             return samplesRead;
         }
