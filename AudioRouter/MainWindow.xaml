@@ -4,6 +4,7 @@
         Title="Audio Router - Pro Audio Routing Tool" Height="750" Width="1100"
         MinHeight="650" MinWidth="900"
         WindowStartupLocation="CenterScreen"
+        Background="#000000"
         Closing="Window_Closing">
     <Grid Margin="15">
         <Grid.RowDefinitions>
