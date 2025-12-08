@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using AudioRouter.Models;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
@@ -19,6 +20,8 @@ namespace AudioRouter.Services
         private VolumeSampleProvider? _volumeProvider;
         private CancellationTokenSource? _cancellationTokenSource;
         private bool _isRunning;
+        private readonly DispatcherTimer _levelUpdateTimer;
+        private float _currentLevel = 0f;
 
         public event EventHandler<string>? OnError;
         public event EventHandler? OnStopped;
@@ -31,11 +34,33 @@ namespace AudioRouter.Services
             // Subscribe to volume changes
             _route.OnVolumeChanged += (sender, volume) =>
             {
-                if (_volumeProvider != null)
+                if (_volumeProvider != null && !_route.IsMuted)
                 {
                     _volumeProvider.Volume = volume;
                     Debug.WriteLine($"Volume changed to {volume * 100}% for route: {_route}");
                 }
+            };
+
+            // Subscribe to mute changes
+            _route.OnMuteChanged += (sender, isMuted) =>
+            {
+                if (_volumeProvider != null)
+                {
+                    _volumeProvider.Volume = isMuted ? 0f : _route.Volume;
+                    Debug.WriteLine($"Mute changed to {isMuted} for route: {_route}");
+                }
+            };
+
+            // Set up audio level update timer (60 FPS for smooth animation)
+            _levelUpdateTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            _levelUpdateTimer.Tick += (s, e) =>
+            {
+                _route.AudioLevel = _currentLevel;
+                // Decay the level for smooth falloff
+                _currentLevel *= 0.85f;
             };
         }
 
@@ -121,6 +146,9 @@ namespace AudioRouter.Services
                 _isRunning = true;
                 _route.IsActive = true;
 
+                // Start audio level monitoring
+                _levelUpdateTimer.Start();
+
                 Debug.WriteLine($"✓ Route started: {_route} | Latency: {_route.LatencyConfig.Mode}");
             }
             catch (Exception ex)
@@ -136,6 +164,21 @@ namespace AudioRouter.Services
             if (_waveProvider != null && e.BytesRecorded > 0)
             {
                 _waveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
+
+                // Calculate audio level (RMS)
+                float sum = 0;
+                int sampleCount = e.BytesRecorded / 4; // 4 bytes per float sample
+                for (int i = 0; i < e.BytesRecorded - 1; i += 4)
+                {
+                    float sample = BitConverter.ToSingle(e.Buffer, i);
+                    sum += sample * sample;
+                }
+
+                if (sampleCount > 0)
+                {
+                    float rms = (float)Math.Sqrt(sum / sampleCount);
+                    _currentLevel = Math.Max(_currentLevel, Math.Min(rms * 5f, 1f)); // Amplify and clamp
+                }
             }
         }
 
@@ -159,6 +202,10 @@ namespace AudioRouter.Services
                 _isRunning = false;
                 _route.IsActive = false;
 
+                // Stop audio level monitoring
+                _levelUpdateTimer.Stop();
+                _route.AudioLevel = 0f;
+
                 _cancellationTokenSource?.Cancel();
 
                 if (_capture != null)
@@ -175,6 +222,7 @@ namespace AudioRouter.Services
                 _capture?.Dispose();
                 _output?.Dispose();
                 _waveProvider = null;
+                _volumeProvider = null;
 
                 Debug.WriteLine($"Stopped routing: {_route}");
                 OnStopped?.Invoke(this, EventArgs.Empty);
@@ -189,6 +237,7 @@ namespace AudioRouter.Services
         {
             Task.Run(async () => await StopAsync()).Wait();
             _cancellationTokenSource?.Dispose();
+            _levelUpdateTimer?.Stop();
         }
     }
 }

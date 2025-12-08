@@ -1,4 +1,5 @@
 using System;
+using System.Windows.Media;
 
 namespace AudioRouter.Models
 {
@@ -11,6 +12,9 @@ namespace AudioRouter.Models
         public bool IsMuted { get; set; }
         public string DeviceId { get; set; } = string.Empty;
         public string DeviceName { get; set; } = string.Empty;
+        public ImageSource? Icon { get; set; }
+        public bool IsPlaying { get; set; }
+        public string ExecutablePath { get; set; } = string.Empty;
 
         public override string ToString()
         {

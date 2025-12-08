@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using AudioRouter.Models;
+using AudioRouter.Helpers;
 using NAudio.CoreAudioApi;
 
 namespace AudioRouter.Services
@@ -56,6 +57,23 @@ namespace AudioRouter.Services
                                 // Check if process still exists and has a window
                                 if (!process.HasExited)
                                 {
+                                    // Get executable path
+                                    string? exePath = null;
+                                    try
+                                    {
+                                        exePath = process.MainModule?.FileName;
+                                    }
+                                    catch { /* Access denied */ }
+
+                                    // Check if actively playing (AudioMeterInformation peak value > 0)
+                                    bool isPlaying = false;
+                                    try
+                                    {
+                                        var peakValue = session.AudioMeterInformation.MasterPeakValue;
+                                        isPlaying = peakValue > 0.001f;
+                                    }
+                                    catch { /* Audio meter not available */ }
+
                                     sessions.Add(new AudioSession
                                     {
                                         ProcessId = processId,
@@ -64,7 +82,10 @@ namespace AudioRouter.Services
                                         Volume = session.SimpleAudioVolume.Volume,
                                         IsMuted = session.SimpleAudioVolume.Mute,
                                         DeviceId = device.ID,
-                                        DeviceName = device.FriendlyName
+                                        DeviceName = device.FriendlyName,
+                                        ExecutablePath = exePath ?? string.Empty,
+                                        Icon = IconExtractor.GetProcessIcon(processId),
+                                        IsPlaying = isPlaying
                                     });
 
                                     seenProcessIds.Add(processId);

@@ -6,6 +6,9 @@
     <Application.Resources>
         <converters:VolumeConverter x:Key="VolumeConverter"/>
         <converters:LatencyModeConverter x:Key="LatencyModeConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:MuteIconConverter x:Key="MuteIconConverter"/>
+        <converters:AudioLevelWidthConverter x:Key="AudioLevelWidthConverter"/>
 
         <!-- Dark Theme Colors - True Black Theme -->
         <SolidColorBrush x:Key="DarkBackground" Color="#000000"/>
