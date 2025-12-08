@@ -101,6 +101,9 @@ namespace AudioRouter.Services
                     Volume = _route.Volume
                 };
 
+                // Add diagnostic wrapper to see if output is reading from provider
+                var diagnosticProvider = new DiagnosticSampleProvider(_volumeProvider);
+
                 // Initialize output to target device with configured latency
                 // Use Shared mode with event callback for better compatibility
                 _output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, true, _route.LatencyConfig.WasapiLatencyMilliseconds);
@@ -108,7 +111,7 @@ namespace AudioRouter.Services
                 Debug.WriteLine($"Initializing WasapiOut with output device: {outputDevice.FriendlyName}");
                 Debug.WriteLine($"Output device format: {outputDevice.AudioClient.MixFormat}");
 
-                _output.Init(_volumeProvider);
+                _output.Init(diagnosticProvider);
 
                 Debug.WriteLine($"WasapiOut initialized successfully");
                 Debug.WriteLine($"Output format after init: {_output.OutputWaveFormat}");
