@@ -187,7 +187,37 @@
                         <ListBox x:Name="AudioSessionsListBox" Height="160"
                                 SelectionChanged="AudioSessionsListBox_SelectionChanged"
                                 IsSynchronizedWithCurrentItem="False"
-                                BorderThickness="1"/>
+                                BorderThickness="1">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- App Icon -->
+                                        <Image Grid.Column="0" Source="{Binding Icon}" Width="24" Height="24"
+                                              Margin="0,0,8,0" VerticalAlignment="Center"/>
+
+                                        <!-- App Name -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13"/>
+                                            <TextBlock Text="{Binding DeviceName}" FontSize="10"
+                                                      Foreground="{StaticResource TextMuted}"/>
+                                        </StackPanel>
+
+                                        <!-- Playing Indicator -->
+                                        <Border Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0"
+                                               Background="#00C853" CornerRadius="2" Padding="4,2"
+                                               Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <TextBlock Text="▶" FontSize="8" Foreground="White" FontWeight="Bold"/>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                         <Button Content="🔄 Refresh Applications" Click="RefreshSessions_Click"
                                HorizontalAlignment="Stretch" Margin="0,8,0,0"/>
                     </StackPanel>
@@ -267,12 +297,14 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
+                                        <!-- Route Info -->
                                         <StackPanel Grid.Row="0" Grid.Column="0">
                                             <TextBlock Text="{Binding SourceSession.DisplayName}"
                                                       FontWeight="SemiBold" FontSize="14"
@@ -287,13 +319,45 @@
                                             </TextBlock>
                                         </StackPanel>
 
-                                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
-                                            <TextBlock Text="🟢" FontSize="18"
-                                                      VerticalAlignment="Center"/>
-                                        </StackPanel>
+                                        <!-- Mute Button -->
+                                        <Button Grid.Row="0" Grid.Column="1"
+                                               VerticalAlignment="Top"
+                                               Width="32" Height="32"
+                                               Click="MuteButton_Click"
+                                               Tag="{Binding}">
+                                            <TextBlock>
+                                                <Run Text="{Binding IsMuted, Converter={StaticResource MuteIconConverter}}" FontSize="14"/>
+                                            </TextBlock>
+                                        </Button>
 
-                                        <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                                                   Orientation="Horizontal" Margin="0,12,0,0">
+                                        <!-- Audio Level Meter -->
+                                        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8,0,0" Height="20">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="🎵" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+                                            <Border Grid.Column="1" Background="#1A1A1A" BorderBrush="{StaticResource DarkBorder}"
+                                                   BorderThickness="1" CornerRadius="2" Height="16" VerticalAlignment="Center">
+                                                <Grid>
+                                                    <!-- Level Fill -->
+                                                    <Border Background="{StaticResource DarkAccent}" CornerRadius="1" HorizontalAlignment="Left">
+                                                        <Border.Width>
+                                                            <MultiBinding Converter="{StaticResource AudioLevelWidthConverter}">
+                                                                <Binding Path="AudioLevel"/>
+                                                                <Binding RelativeSource="{RelativeSource AncestorType=Border}" Path="ActualWidth"/>
+                                                            </MultiBinding>
+                                                        </Border.Width>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Volume Control -->
+                                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                                   Orientation="Horizontal" Margin="0,8,0,0">
                                             <TextBlock Text="🔊" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <Slider Width="160" Minimum="0" Maximum="100"
                                                    Value="{Binding Volume, Mode=TwoWay, Converter={StaticResource VolumeConverter}}"

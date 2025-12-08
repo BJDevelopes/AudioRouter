@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using AudioRouter.Models;
 using AudioRouter.Services;
 using AudioRouter.Helpers;
+using System.Windows.Forms;
 
 namespace AudioRouter
 {
@@ -17,6 +18,8 @@ namespace AudioRouter
         private readonly AudioDeviceEnumerator _deviceEnumerator;
         private readonly RoutingManager _routingManager;
         private readonly DispatcherTimer _refreshTimer;
+        private readonly NotifyIcon? _notifyIcon;
+        private bool _isClosing = false;
 
         private ObservableCollection<AudioSession> _audioSessions;
         private ObservableCollection<AudioDeviceInfo> _outputDevices;
@@ -41,6 +44,41 @@ namespace AudioRouter
             AudioSessionsListBox.ItemsSource = _audioSessions;
             OutputDevicesComboBox.ItemsSource = _outputDevices;
             ActiveRoutesListBox.ItemsSource = _activeRoutes;
+
+            // Register keyboard shortcuts
+            KeyDown += MainWindow_KeyDown;
+
+            // Set up system tray icon
+            _notifyIcon = new NotifyIcon
+            {
+                Icon = System.Drawing.SystemIcons.Application,
+                Visible = false,
+                Text = "Audio Router"
+            };
+
+            _notifyIcon.DoubleClick += (s, e) =>
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                _notifyIcon.Visible = false;
+            };
+
+            var contextMenu = new ContextMenuStrip();
+            contextMenu.Items.Add("Show", null, (s, e) =>
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                _notifyIcon.Visible = false;
+            });
+            contextMenu.Items.Add("Exit", null, (s, e) =>
+            {
+                _isClosing = true;
+                Close();
+            });
+            _notifyIcon.ContextMenuStrip = contextMenu;
+
+            // Handle minimize/restore
+            StateChanged += MainWindow_StateChanged;
 
             // Set up latency mode selector
             LatencyModeComboBox.ItemsSource = new[]
@@ -205,8 +243,14 @@ namespace AudioRouter
         {
             if (_selectedSession == null || _selectedOutputDevice == null)
             {
-                MessageBox.Show("Please select an application and an output device.",
-                    "Selection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(
+                    "⚠️ Cannot start route:\n\n" +
+                    "• Select an application from the list (left side)\n" +
+                    "• Select an output device from the dropdown\n\n" +
+                    "Tip: If you don't see your application, make sure it's playing audio and click 'Refresh Applications'.",
+                    "Selection Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
 
@@ -246,15 +290,33 @@ namespace AudioRouter
                 var success = await _routingManager.StartRouteAsync(route);
                 if (!success)
                 {
-                    MessageBox.Show("Failed to start audio route. The application may not be playing audio.",
-                        "Route Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                    UpdateStatus("Failed to start route");
+                    System.Windows.MessageBox.Show(
+                        "❌ Failed to start audio route\n\n" +
+                        "Troubleshooting steps:\n" +
+                        "1. Make sure the application is actively playing audio\n" +
+                        "2. Try running Audio Router as Administrator for better access\n" +
+                        "3. Check that the output device is connected and working\n" +
+                        "4. Restart the source application and try again\n\n" +
+                        $"Application: {_selectedSession.DisplayName}\n" +
+                        $"Output: {_selectedOutputDevice.FriendlyName}",
+                        "Route Failed",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    UpdateStatus("Failed to start route - see error dialog for details");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error starting route: {ex.Message}",
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(
+                    $"❌ Error starting route\n\n" +
+                    $"Error: {ex.Message}\n\n" +
+                    "Troubleshooting:\n" +
+                    "• Try running as Administrator (click 'Run as Admin' button)\n" +
+                    "• Ensure the application has an active audio session\n" +
+                    "• Check that both devices are properly connected",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
                 UpdateStatus($"Error: {ex.Message}");
             }
             finally
@@ -268,8 +330,13 @@ namespace AudioRouter
             var selectedRoute = ActiveRoutesListBox.SelectedItem as AudioRoute;
             if (selectedRoute == null)
             {
-                MessageBox.Show("Please select a route to stop.",
-                    "Selection Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(
+                    "⚠️ No route selected\n\n" +
+                    "Please select a route from the 'Active Routes' list (right side) to stop it.\n\n" +
+                    "Tip: You can also press the Delete key to stop the selected route.",
+                    "Selection Required",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
 
@@ -281,8 +348,13 @@ namespace AudioRouter
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error stopping route: {ex.Message}",
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show(
+                    $"❌ Error stopping route\n\n" +
+                    $"Error: {ex.Message}\n\n" +
+                    "The route may have already been stopped or the application closed.",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
                 UpdateStatus($"Error: {ex.Message}");
             }
         }
@@ -302,6 +374,59 @@ namespace AudioRouter
         private void UpdateStatus(string message)
         {
             StatusTextBlock.Text = $"{DateTime.Now:HH:mm:ss} - {message}";
+        }
+
+        // Mute Button Handler
+        private void MuteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button button && button.Tag is AudioRoute route)
+            {
+                route.IsMuted = !route.IsMuted;
+                UpdateStatus($"{(route.IsMuted ? "Muted" : "Unmuted")}: {route.SourceSession.DisplayName}");
+            }
+        }
+
+        // Keyboard Shortcuts Handler
+        private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Ctrl+R: Refresh sessions
+            if (e.Key == Key.R && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                RefreshSessions_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+            }
+            // Delete: Stop selected route
+            else if (e.Key == Key.Delete && ActiveRoutesListBox.SelectedItem != null)
+            {
+                StopRoute_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+            }
+            // Ctrl+Q: Quit
+            else if (e.Key == Key.Q && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                Close();
+                e.Handled = true;
+            }
+            // Space: Start route (when selections are valid)
+            else if (e.Key == Key.Space && StartRouteButton.IsEnabled)
+            {
+                StartRoute_Click(this, new RoutedEventArgs());
+                e.Handled = true;
+            }
+        }
+
+        // System Tray Handler
+        private void MainWindow_StateChanged(object? sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                Hide();
+                if (_notifyIcon != null)
+                {
+                    _notifyIcon.Visible = true;
+                    _notifyIcon.ShowBalloonTip(2000, "Audio Router", "Minimized to system tray", ToolTipIcon.Info);
+                }
+            }
         }
 
         // Title Bar Event Handlers
@@ -343,11 +468,19 @@ namespace AudioRouter
 
         private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // If not explicitly closing and we have active routes, minimize to tray instead
+            if (!_isClosing && _activeRoutes.Count > 0)
+            {
+                e.Cancel = true;
+                WindowState = WindowState.Minimized;
+                return;
+            }
+
             _refreshTimer?.Stop();
 
             if (_activeRoutes.Count > 0)
             {
-                var result = MessageBox.Show(
+                var result = System.Windows.MessageBox.Show(
                     $"There are {_activeRoutes.Count} active route(s). Stop all routes and exit?",
                     "Confirm Exit",
                     MessageBoxButton.YesNo,
@@ -356,6 +489,7 @@ namespace AudioRouter
                 if (result == MessageBoxResult.No)
                 {
                     e.Cancel = true;
+                    _isClosing = false;
                     return;
                 }
 
@@ -366,6 +500,7 @@ namespace AudioRouter
             _routingManager?.Dispose();
             _sessionManager?.Dispose();
             _deviceEnumerator?.Dispose();
+            _notifyIcon?.Dispose();
         }
     }
 }
