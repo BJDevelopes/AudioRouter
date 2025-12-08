@@ -127,6 +127,8 @@ namespace AudioRouter.Services
 
                 Debug.WriteLine($"WasapiOut initialized successfully");
                 Debug.WriteLine($"Output format after init: {_output.OutputWaveFormat}");
+                Debug.WriteLine($"Output device volume: {outputDevice.AudioEndpointVolume.MasterVolumeLevelScalar:P0}");
+                Debug.WriteLine($"Output device muted: {outputDevice.AudioEndpointVolume.Mute}");
 
                 Debug.WriteLine($"Route started with latency: {_route.LatencyConfig.Mode} (Buffer: {_route.LatencyConfig.BufferMilliseconds}ms, WASAPI: {_route.LatencyConfig.WasapiLatencyMilliseconds}ms)");
 

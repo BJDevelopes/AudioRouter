@@ -23,7 +23,18 @@ namespace AudioRouter.Services
             // Log every 50th read to avoid spam
             if (_readCount++ % 50 == 0)
             {
-                Debug.WriteLine($"[DiagnosticSampleProvider] Read {samplesRead} samples (requested {count})");
+                // Check if we're getting actual audio or silence
+                float maxValue = 0f;
+                float sumSquares = 0f;
+                for (int i = offset; i < offset + samplesRead; i++)
+                {
+                    float absValue = Math.Abs(buffer[i]);
+                    if (absValue > maxValue) maxValue = absValue;
+                    sumSquares += buffer[i] * buffer[i];
+                }
+                float rms = samplesRead > 0 ? (float)Math.Sqrt(sumSquares / samplesRead) : 0f;
+
+                Debug.WriteLine($"[DiagnosticSampleProvider] Read {samplesRead} samples | Peak: {maxValue:F4} | RMS: {rms:F4}");
             }
 
             return samplesRead;
