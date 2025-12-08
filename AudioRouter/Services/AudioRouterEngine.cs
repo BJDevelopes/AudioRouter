@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AudioRouter.Models;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace AudioRouter.Services
 {

@@ -1,3 +1,5 @@
+using System;
+
 namespace AudioRouter.Models
 {
     public enum LatencyMode
