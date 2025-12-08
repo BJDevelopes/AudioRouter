@@ -8,7 +8,6 @@ using System.Windows.Threading;
 using AudioRouter.Models;
 using AudioRouter.Services;
 using AudioRouter.Helpers;
-using System.Windows.Forms;
 
 namespace AudioRouter
 {
@@ -18,7 +17,7 @@ namespace AudioRouter
         private readonly AudioDeviceEnumerator _deviceEnumerator;
         private readonly RoutingManager _routingManager;
         private readonly DispatcherTimer _refreshTimer;
-        private readonly NotifyIcon? _notifyIcon;
+        private readonly System.Windows.Forms.NotifyIcon? _notifyIcon;
         private bool _isClosing = false;
 
         private ObservableCollection<AudioSession> _audioSessions;
@@ -49,7 +48,7 @@ namespace AudioRouter
             KeyDown += MainWindow_KeyDown;
 
             // Set up system tray icon
-            _notifyIcon = new NotifyIcon
+            _notifyIcon = new System.Windows.Forms.NotifyIcon
             {
                 Icon = System.Drawing.SystemIcons.Application,
                 Visible = false,
@@ -63,7 +62,7 @@ namespace AudioRouter
                 _notifyIcon.Visible = false;
             };
 
-            var contextMenu = new ContextMenuStrip();
+            var contextMenu = new System.Windows.Forms.ContextMenuStrip();
             contextMenu.Items.Add("Show", null, (s, e) =>
             {
                 Show();
@@ -424,7 +423,7 @@ namespace AudioRouter
                 if (_notifyIcon != null)
                 {
                     _notifyIcon.Visible = true;
-                    _notifyIcon.ShowBalloonTip(2000, "Audio Router", "Minimized to system tray", ToolTipIcon.Info);
+                    _notifyIcon.ShowBalloonTip(2000, "Audio Router", "Minimized to system tray", System.Windows.Forms.ToolTipIcon.Info);
                 }
             }
         }
