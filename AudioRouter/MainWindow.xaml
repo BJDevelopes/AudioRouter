@@ -13,11 +13,27 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Background="#2C3E50" Padding="15" CornerRadius="5" Margin="0,0,0,10">
-            <StackPanel>
-                <TextBlock Text="Audio Router" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                <TextBlock Text="Route audio from any application to any output device"
-                          FontSize="12" Foreground="#BDC3C7" Margin="0,5,0,0"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Audio Router" FontSize="24" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="Route audio from any application to any output device"
+                              FontSize="12" Foreground="#BDC3C7" Margin="0,5,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <Border x:Name="AdminBadge" Background="#E74C3C" CornerRadius="3" Padding="8,4" Margin="0,0,0,5">
+                        <TextBlock Text="⚡ ADMIN MODE" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                    </Border>
+                    <Button x:Name="RestartAsAdminButton" Content="🔓 Run as Admin"
+                           Click="RestartAsAdmin_Click" FontSize="10" Padding="8,4"
+                           Background="#3498DB" Foreground="White" BorderThickness="0"/>
+                </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Main Content -->
@@ -33,6 +49,7 @@
                    BorderThickness="1" CornerRadius="5" Padding="10">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -74,11 +91,28 @@
                                HorizontalAlignment="Stretch" Margin="0,5,0,0"/>
                     </StackPanel>
 
+                    <!-- Latency Mode -->
+                    <StackPanel Grid.Row="4" Margin="0,0,0,10">
+                        <TextBlock FontWeight="SemiBold" Margin="0,0,0,5">
+                            <Run Text="⚡ Latency Mode:"/>
+                        </TextBlock>
+                        <ComboBox x:Name="LatencyModeComboBox"
+                                 SelectionChanged="LatencyModeComboBox_SelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource LatencyModeConverter}}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock x:Name="LatencyInfoText" Text="Ultra Low: Best for movies/gaming"
+                                  FontSize="10" Foreground="#7F8C8D" Margin="5,3,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+
                     <!-- Spacer -->
-                    <Border Grid.Row="4"/>
+                    <Border Grid.Row="5"/>
 
                     <!-- Create Route Button -->
-                    <Button Grid.Row="5" Content="▶️ Start Audio Route"
+                    <Button Grid.Row="6" Content="▶️ Start Audio Route"
                            x:Name="StartRouteButton" Click="StartRoute_Click"
                            Height="40" FontSize="14" FontWeight="Bold"
                            Background="#27AE60" Foreground="White"

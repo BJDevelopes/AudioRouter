@@ -65,11 +65,12 @@ namespace AudioRouter.Services
                 // Initialize loopback capture
                 _capture = new WasapiLoopbackCapture(captureDevice);
 
-                // Create a buffered wave provider
+                // Create a buffered wave provider with configured latency
                 _waveProvider = new BufferedWaveProvider(_capture.WaveFormat)
                 {
-                    BufferDuration = TimeSpan.FromSeconds(2),
-                    DiscardOnBufferOverflow = true
+                    BufferDuration = _route.LatencyConfig.BufferDuration,
+                    DiscardOnBufferOverflow = true,
+                    ReadFully = false // Better for low latency
                 };
 
                 // Add volume control
@@ -79,13 +80,26 @@ namespace AudioRouter.Services
                     Volume = _route.Volume
                 };
 
-                // Initialize output to target device
-                _output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, false, 50);
+                // Initialize output to target device with configured latency
+                _output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, false, _route.LatencyConfig.WasapiLatencyMilliseconds);
                 _output.Init(_volumeProvider);
+
+                Debug.WriteLine($"Route started with latency: {_route.LatencyConfig.Mode} (Buffer: {_route.LatencyConfig.BufferMilliseconds}ms, WASAPI: {_route.LatencyConfig.WasapiLatencyMilliseconds}ms)");
 
                 // Set up data available handler
                 _capture.DataAvailable += OnDataAvailable;
                 _capture.RecordingStopped += OnRecordingStopped;
+
+                // Boost thread priority for better audio performance
+                try
+                {
+                    Thread.CurrentThread.Priority = ThreadPriority.Highest;
+                    Debug.WriteLine("Audio thread priority set to Highest");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Could not set thread priority: {ex.Message}");
+                }
 
                 // Start capture and playback
                 _capture.StartRecording();

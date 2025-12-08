@@ -10,6 +10,7 @@ namespace AudioRouter.Models
         public AudioSession SourceSession { get; set; } = null!;
         public AudioDeviceInfo SourceDevice { get; set; } = null!;
         public AudioDeviceInfo TargetDevice { get; set; } = null!;
+        public LatencyConfiguration LatencyConfig { get; set; } = LatencyConfiguration.GetConfiguration(LatencyMode.UltraLow);
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 

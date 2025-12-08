@@ -8,6 +8,9 @@ A Windows desktop application that allows you to route and duplicate audio from 
 
 ## Features
 
+- **⚡ Ultra-Low Latency**: Optimized for movie streaming and gaming with as low as 10-20ms latency
+- **🔓 Admin Mode Support**: Run with elevated privileges for better performance and priority
+- **🎛️ Configurable Latency**: Choose from Ultra Low, Low, Normal, or High stability modes
 - **Zero Configuration**: Works without modifying Windows audio settings or application settings
 - **Flexible Audio Routing**: Select any input device to capture from and route to any output device
 - **Application-Level Context**: Track which application's audio you're routing
@@ -30,7 +33,10 @@ Audio Router uses **WASAPI (Windows Audio Session API) Loopback Capture** to:
 
 - Windows 10 or Windows 11
 - .NET 8.0 Runtime or SDK
-- Administrative privileges may be required for some audio devices
+- **Administrator privileges recommended** for best performance (optional - can run in normal mode)
+  - Admin mode enables HIGH process priority
+  - Better audio thread scheduling
+  - Reduced audio dropouts
 
 ## Installation
 
@@ -84,13 +90,29 @@ The executable will be in `AudioRouter/bin/Release/net8.0-windows/win-x64/publis
    - Choose the target output device from the dropdown
    - This is where the audio will be duplicated/forwarded to
 
-5. **Start Route**:
+5. **Select Latency Mode** ⚡:
+   - **Ultra Low** (~10-20ms): Best for movies, gaming, real-time streams
+   - **Low** (~30-50ms): Good balance of latency and stability
+   - **Normal** (~50-100ms): Stable for most use cases
+   - **High** (~100-200ms): Maximum stability for problematic systems
+
+6. **Start Route**:
    - Click "▶️ Start Audio Route"
    - The route appears in the "Active Routes" panel on the right
 
-6. **Adjust Volume** (Optional):
+7. **Adjust Volume** (Optional):
    - Use the slider next to each active route to control its volume
    - Volume is independent from system volume and application volume
+
+### Admin Mode (Recommended for Best Performance)
+
+- **Check Status**: Look for the "⚡ ADMIN MODE" badge in the top-right corner
+- **Enable Admin Mode**: Click "🔓 Run as Admin" button if not already running as admin
+- **Benefits**:
+  - High process priority for better audio performance
+  - Reduced audio dropouts and glitches
+  - Better thread scheduling for real-time audio
+  - Essential for ultra-low latency mode
 
 ### Managing Routes
 

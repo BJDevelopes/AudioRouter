@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Threading;
 using AudioRouter.Models;
 using AudioRouter.Services;
+using AudioRouter.Helpers;
 
 namespace AudioRouter
 {
@@ -24,6 +25,7 @@ namespace AudioRouter
         private AudioSession? _selectedSession;
         private AudioDeviceInfo? _selectedInputDevice;
         private AudioDeviceInfo? _selectedOutputDevice;
+        private LatencyMode _selectedLatencyMode = LatencyMode.UltraLow;
 
         public MainWindow()
         {
@@ -42,6 +44,16 @@ namespace AudioRouter
             InputDevicesComboBox.ItemsSource = _inputDevices;
             OutputDevicesComboBox.ItemsSource = _outputDevices;
             ActiveRoutesListBox.ItemsSource = _activeRoutes;
+
+            // Set up latency mode selector
+            LatencyModeComboBox.ItemsSource = new[]
+            {
+                LatencyMode.UltraLow,
+                LatencyMode.Low,
+                LatencyMode.Normal,
+                LatencyMode.High
+            };
+            LatencyModeComboBox.SelectedItem = LatencyMode.UltraLow;
 
             // Set up routing manager events
             _routingManager.OnRouteStarted += (sender, route) =>
@@ -89,10 +101,25 @@ namespace AudioRouter
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // Check admin status and update UI
+            bool isAdmin = AdminHelper.IsRunningAsAdmin();
+            AdminBadge.Visibility = isAdmin ? Visibility.Visible : Visibility.Collapsed;
+            RestartAsAdminButton.Visibility = isAdmin ? Visibility.Collapsed : Visibility.Visible;
+
+            // Boost process priority if running as admin
+            if (isAdmin)
+            {
+                AdminHelper.SetProcessPriority();
+                UpdateStatus("Running in ADMIN MODE with HIGH process priority");
+            }
+            else
+            {
+                UpdateStatus("Running in normal mode - Run as admin for better performance");
+            }
+
             RefreshAudioSessions();
             RefreshInputDevices();
             RefreshOutputDevices();
-            UpdateStatus("Ready - Select an application, input device, and output device to create a route");
         }
 
         private void RefreshAudioSessions()
@@ -177,6 +204,30 @@ namespace AudioRouter
             UpdateStartButtonState();
         }
 
+        private void LatencyModeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (LatencyModeComboBox.SelectedItem is LatencyMode mode)
+            {
+                _selectedLatencyMode = mode;
+                var config = LatencyConfiguration.GetConfiguration(mode);
+                LatencyInfoText.Text = $"{config} - Buffer: {config.BufferMilliseconds}ms, WASAPI: {config.WasapiLatencyMilliseconds}ms";
+            }
+        }
+
+        private void RestartAsAdmin_Click(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Audio Router will restart with administrator privileges for better performance.\n\nContinue?",
+                "Restart as Administrator",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                AdminHelper.RestartAsAdmin();
+            }
+        }
+
         private void UpdateStartButtonState()
         {
             StartRouteButton.IsEnabled = _selectedSession != null &&
@@ -210,7 +261,8 @@ namespace AudioRouter
             {
                 SourceSession = _selectedSession,
                 SourceDevice = _selectedInputDevice,
-                TargetDevice = _selectedOutputDevice
+                TargetDevice = _selectedOutputDevice,
+                LatencyConfig = LatencyConfiguration.GetConfiguration(_selectedLatencyMode)
             };
 
             UpdateStatus($"Starting route: {route}...");

@@ -5,6 +5,7 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
         <converters:VolumeConverter x:Key="VolumeConverter"/>
+        <converters:LatencyModeConverter x:Key="LatencyModeConverter"/>
 
         <Style TargetType="Window">
             <Setter Property="Background" Value="#F0F0F0"/>
