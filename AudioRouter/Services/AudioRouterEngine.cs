@@ -19,6 +19,7 @@ namespace AudioRouter.Services
         private VolumeSampleProvider? _volumeProvider;
         private CancellationTokenSource? _cancellationTokenSource;
         private bool _isRunning;
+        private int _packetCount;
 
         public event EventHandler<string>? OnError;
         public event EventHandler? OnStopped;
@@ -88,6 +89,11 @@ namespace AudioRouter.Services
                     ReadFully = false // Better for low latency
                 };
 
+                Debug.WriteLine($"Capture format: {_capture.WaveFormat}");
+                Debug.WriteLine($"  Sample Rate: {_capture.WaveFormat.SampleRate}");
+                Debug.WriteLine($"  Channels: {_capture.WaveFormat.Channels}");
+                Debug.WriteLine($"  Bits Per Sample: {_capture.WaveFormat.BitsPerSample}");
+
                 // Add volume control
                 var sampleProvider = _waveProvider.ToSampleProvider();
                 _volumeProvider = new VolumeSampleProvider(sampleProvider)
@@ -96,8 +102,16 @@ namespace AudioRouter.Services
                 };
 
                 // Initialize output to target device with configured latency
-                _output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, false, _route.LatencyConfig.WasapiLatencyMilliseconds);
+                // Use Shared mode with event callback for better compatibility
+                _output = new WasapiOut(outputDevice, AudioClientShareMode.Shared, true, _route.LatencyConfig.WasapiLatencyMilliseconds);
+
+                Debug.WriteLine($"Initializing WasapiOut with output device: {outputDevice.FriendlyName}");
+                Debug.WriteLine($"Output device format: {outputDevice.AudioClient.MixFormat}");
+
                 _output.Init(_volumeProvider);
+
+                Debug.WriteLine($"WasapiOut initialized successfully");
+                Debug.WriteLine($"Output format after init: {_output.OutputWaveFormat}");
 
                 Debug.WriteLine($"Route started with latency: {_route.LatencyConfig.Mode} (Buffer: {_route.LatencyConfig.BufferMilliseconds}ms, WASAPI: {_route.LatencyConfig.WasapiLatencyMilliseconds}ms)");
 
@@ -123,6 +137,8 @@ namespace AudioRouter.Services
                 Debug.WriteLine("Starting playback...");
                 _output.Play();
 
+                Debug.WriteLine($"Output PlaybackState: {_output.PlaybackState}");
+
                 _isRunning = true;
                 _route.IsActive = true;
 
@@ -143,7 +159,12 @@ namespace AudioRouter.Services
             if (_waveProvider != null && e.BytesRecorded > 0)
             {
                 _waveProvider.AddSamples(e.Buffer, 0, e.BytesRecorded);
-                Debug.WriteLine($"Captured {e.BytesRecorded} bytes of audio data");
+
+                // Debug every 10th packet to reduce spam
+                if (_packetCount++ % 10 == 0)
+                {
+                    Debug.WriteLine($"Captured {e.BytesRecorded} bytes | Buffer: {_waveProvider.BufferedBytes} bytes ({_waveProvider.BufferedDuration.TotalMilliseconds:F1}ms) | Output state: {_output?.PlaybackState}");
+                }
             }
         }
 
